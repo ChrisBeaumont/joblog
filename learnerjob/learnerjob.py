@@ -27,7 +27,8 @@ class JobFactory(object):
     :param collection_name: Optional collection to store jobs in.
     :type collection_name: string
     """
-    def __init__(self, mongo_uri, db='skljob',
+    def __init__(self, mongo_uri='localhost',
+                 db='skljob',
                  collection_name='default'):
         self.client = MongoClient(mongo_uri)
         self.db = self.client[db]
