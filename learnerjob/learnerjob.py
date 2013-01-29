@@ -21,14 +21,14 @@ class JobFactory(object):
     :param mongo_uri: URI for a mongo database to connect to
     :type mongo_uri: string
 
-    :param db: Name of database to use. Defaults to skljob
+    :param db: Name of database to use. Defaults to job
     :type db: string
 
     :param collection_name: Optional collection to store jobs in.
     :type collection_name: string
     """
     def __init__(self, mongo_uri='localhost',
-                 db='skljob',
+                 db='job',
                  collection_name='default'):
         self.client = MongoClient(mongo_uri)
         self.db = self.client[db]
