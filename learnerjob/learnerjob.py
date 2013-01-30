@@ -7,11 +7,12 @@ transparently stored on a Mongo database.
 """
 from hashlib import md5
 from pymongo import MongoClient
+import gridfs
 
 try:
-    from cPickle import dumps, loads
+    from cPickle import dumps, load
 except ImportError:
-    from pickle import dumps, loads
+    from pickle import dumps, load
 
 
 class JobFactory(object):
@@ -100,6 +101,7 @@ class Job(object):
         self.Y = Y
         self.params = params
         self.collection = collection
+        self._fs = gridfs.GridFS(collection.database)
 
         self._x_hash = md5(X).hexdigest()
         self._y_hash = md5(Y).hexdigest()
@@ -133,12 +135,16 @@ class Job(object):
     def result(self):
         entry = self.collection.find_one(self._entry)
         if entry is not None and 'result' in entry:
-            return loads(str(entry['result']))
+            result = load(self._fs.get(entry['result']))
+            return result
 
     @result.setter
     def result(self, result):
+        r = dumps(result)
+        rid = self._fs.put(r)
+
         self.collection.update(self._entry,
-                               {"$set" : {"result":dumps(result)}},
+                               {"$set" : {"result":rid}},
                                upsert=True)
 
     @property
