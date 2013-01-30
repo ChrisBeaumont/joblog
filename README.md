@@ -1,4 +1,4 @@
-learnerjob
+joblog
 ==========
 
 Job management for scikit learn classifiers. Inspired by / copied from Joseph Turian https://github.com/turian/batchtrain/blob/master/jobman.py
@@ -18,7 +18,7 @@ Installation
 ------------
 
 ```
-pip install git+git://github.com/ChrisBeaumont/learnerjob.git
+pip install git+git://github.com/ChrisBeaumont/joblog.git
 ```
 
 
@@ -26,7 +26,7 @@ Quick Guide
 ===========
 
 ```
-from learnerjob import JobFactory
+from joblog import JobFactory
 from sklearn.svm import SVC
 from sklearn.datasets import load_iris
 
@@ -55,7 +55,7 @@ job.duplicate    # True
 clf = job.run()  # cached result is returned
 ```
 
-`learnerjob` uses checksums to detect changes in the input arrays.
+`joblog` uses checksums to detect changes in the input arrays.
 
 ```
 X[0] += 1
@@ -66,7 +66,7 @@ clf = job.run()  # new result is computed
 Similarly, any change in the classification class, training data, or hyperparameters
 results in a new classifier being trained and stored
 
-By default, `learnerjob` saves a pickled version of the trained classifier. This is
+By default, `joblog` saves a pickled version of the trained classifier. This is
 accessible via the `result` property:
 
 ```

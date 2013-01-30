@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-setup(name='learnerjob',
+setup(name='joblog',
       version='0.1.0',
-      packages=['learnerjob']
+      packages=['joblog']
       )

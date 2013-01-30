@@ -9,7 +9,7 @@ class TestJob(object):
 
     def setup_class(self):
         conn = pymongo.MongoClient('localhost')
-        self.db = conn.learnerjob_test_database
+        self.db = conn.joblog_test
 
     def setup_method(self, method):
         self.clf = LogisticRegression
@@ -103,11 +103,11 @@ class TestJob(object):
 class TestJobFactory(object):
     def setup_method(self, method):
         conn = pymongo.MongoClient('localhost')
-        db = conn.learnerjob_test_database
+        db = conn.joblog_test
         db.drop_collection('test')
 
     def make_factory(self):
-        return JobFactory('localhost', 'learnerjob_test_database', 'test')
+        return JobFactory('localhost', 'joblog_test', 'test')
 
     def test_make_job(self):
         jf = self.make_factory()
