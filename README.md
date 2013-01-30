@@ -108,3 +108,18 @@ By default, `iter_jobs` skips duplicate jobs. You can turn this off
 for job in jf.iter_jobs(SVC, X, Y, param_grid, filter_duplicates=False):
 	job.rerun()	# force retraining
 ```
+
+Large Classifiers
+-----------------
+Classifiers can sometimes be very large, and too cumbersome to store
+in the database. You can customize what classifier information is stored
+via the `store` keyword in `run()`:
+
+```
+job.run(store='classifier')  # default, stores full classifier
+job.run(store='score')  # store classifier.score(X, Y)
+job.run(store='none')   # store nothing
+```
+
+This also affects what is returned from the `result` property,
+as well as what gets returned during subsequent calls to `run()`.

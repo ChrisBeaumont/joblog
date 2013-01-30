@@ -114,12 +114,29 @@ class Job(object):
         if not self._duplicated:
             self.collection.insert(self._entry)
 
-    def run(self):
+    def run(self, store='classifier'):
         """
         If this job hasn't been run before, train the classifier
         on the data, and return the result. Otherwise, return the
         result of a previous run
+
+        By default, this method stores the pickled classifier
+        in the database, and returns this on subsequent calls
+        to run() or result. This can be changed via the store keyword
+
+        :param store: What to store in the database. Options are
+        'classifier' (store the full classifier), 'score' (store the
+        score on the training data) or 'none' (store nothing). The
+        default is 'classifier'. You may wish to change this if the
+        size of the stored classifier is very large.
         """
+        if store is None:
+            store = 'none'
+        store = store.lower()
+        if  store not in 'classifier none score'.split():
+          raise TypeError("store must be one of 'classifier', "
+                          "'score', or 'none'")
+
         r = self.result
         if r is not None:
             return r
@@ -128,7 +145,11 @@ class Job(object):
         clf.set_params(**self.params)
         clf.fit(self.X, self.Y)
 
-        self.result = clf
+        if store == 'classifier':
+            self.result = clf
+        elif store == 'score':
+            self.result = clf.score(self.X, self.Y)
+
         return clf
 
     @property

@@ -91,6 +91,20 @@ class TestJob(object):
         assert (clf1.coef_ == clf1b.coef_).all()
         assert not (clf1.coef_ == clf2.coef_).all()
 
+    def test_nosave(self):
+        j = Job(self.clf, self.x, self.y, self.params, self.collection)
+        clf1 = j.run(store=None)
+        assert j.result is None
+
+
+    def test_save_score(self):
+
+        j = Job(self.clf, self.x, self.y, self.params, self.collection)
+        clf1 = j.run(store='score')
+        assert j.result == clf1.score(self.x, self.y)
+
+
+
     def test_duplicate(self):
         j = Job(self.clf, self.x, self.y, self.params, self.collection)
         assert not j.duplicate
