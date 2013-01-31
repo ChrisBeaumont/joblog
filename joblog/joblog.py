@@ -7,6 +7,7 @@ transparently stored on a Mongo database.
 """
 from hashlib import md5
 from pymongo import MongoClient
+import json
 import gridfs
 
 try:
@@ -111,7 +112,7 @@ class Job(object):
         self._entry = dict(_x_hash = self._x_hash,
                            _y_hash = self._y_hash,
                            clf = dumps(clf),
-                           params = params)
+                           params = json.dumps(params))
         self._label = label
 
         if label is not None:
