@@ -91,21 +91,38 @@ jf = JobFactory('mongodb://<dbuser>:<dbpassword>@dbh29.mongolab.com:xyz/abc')
 jf = JobFactory(db='db_name', collection='collection_name')
 
 ```
+Job Labels
+----------
+Jobs can be created with an optional label
+
+```
+j = jf.job(SVC, X, Y, {}, label='svc_run')
+```
+
+Two jobs with different labels but the same inputs are considered
+unique.
+
+Deleting Jobs
+-------------
+You can delete all jobs in a collection via `JobFactory.clear_jobs()`
 
 Parameter Search
 -------
+The `job_grid` method creates and returns a grid of jobs
+for all combinations of parameters, similar to the scikit-learn
+IterGrid class
 
 ```
 jf = JobFactory()
 param_grid = {C=[.1, 1, 10], kernel=['linear', 'rbf']}
-for job in jf.iter_jobs(SVC, X, Y, param_grid):
+for job in jf.job_grid(SVC, X, Y, param_grid):
 	job.run()
 ```
 
-By default, `iter_jobs` skips duplicate jobs. You can turn this off
+By default, `job_grid` skips duplicate jobs. You can turn this off
 
 ```
-for job in jf.iter_jobs(SVC, X, Y, param_grid, filter_duplicates=False):
+for job in jf.job_grid(SVC, X, Y, param_grid, filter_duplicates=False):
 	job.rerun()	# force retraining
 ```
 

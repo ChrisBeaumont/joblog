@@ -35,7 +35,7 @@ class JobFactory(object):
         self.db = self.client[db]
         self.collection = self.db[collection_name]
 
-    def job(self, clf, X, Y, params):
+    def job(self, clf, X, Y, params, label=None):
         """
         Create a new job to train a classifier class on training data
 
@@ -52,9 +52,9 @@ class JobFactory(object):
                  classification class
         :type params: dict
         """
-        return Job(clf, X, Y, params, self.collection)
+        return Job(clf, X, Y, params, self.collection, label=label)
 
-    def iter_jobs(self, clf, X, Y, param_grid, filter_duplicates=True):
+    def job_grid(self, clf, X, Y, param_grid, filter_duplicates=True):
         """Return an iterator that produces jobs for
         all combinations of a parameter grid.
 
@@ -82,6 +82,9 @@ class JobFactory(object):
                 continue
             yield j
 
+    def clear_jobs(self):
+        self.collection.drop()
+
 
 class Job(object):
     """Encapsulation of a single job.
@@ -95,7 +98,7 @@ class Job(object):
     :param params:  See :method:`skljob.JobRunner.job`
     :param collection: Database collection object to store into
     """
-    def __init__(self, clf, X, Y, params, collection):
+    def __init__(self, clf, X, Y, params, collection, label=None):
         self.clf = clf
         self.X = X
         self.Y = Y
@@ -109,6 +112,10 @@ class Job(object):
                            _y_hash = self._y_hash,
                            clf = dumps(clf),
                            params = params)
+        self._label = label
+
+        if label is not None:
+            self._entry.update({'label':label})
 
         self._duplicated = (self.collection.find_one(self._entry) is not None)
         if not self._duplicated:
@@ -133,9 +140,9 @@ class Job(object):
         if store is None:
             store = 'none'
         store = store.lower()
-        if  store not in 'classifier none score'.split():
+        if  store not in 'classifier none score prediction'.split():
           raise TypeError("store must be one of 'classifier', "
-                          "'score', or 'none'")
+                          "'score', 'prediction', or 'none'")
 
         r = self.result
         if r is not None:
@@ -149,6 +156,8 @@ class Job(object):
             self.result = clf
         elif store == 'score':
             self.result = clf.score(self.X, self.Y)
+        elif store == 'prediction':
+            self.result = clf.predict(self.X)
 
         return clf
 
@@ -161,12 +170,22 @@ class Job(object):
 
     @result.setter
     def result(self, result):
+        del self.result
+
         r = dumps(result)
         rid = self._fs.put(r)
-
         self.collection.update(self._entry,
                                {"$set" : {"result":rid}},
                                upsert=True)
+
+    @result.deleter
+    def result(self):
+        #delete old result
+        e = self.collection.find_one(self._entry)
+        old_id = e.get('result', None)
+        if old_id is not None:
+            self._fs.delete(old_id)
+
 
     @property
     def duplicate(self):

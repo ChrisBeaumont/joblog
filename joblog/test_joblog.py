@@ -1,4 +1,5 @@
 import pymongo
+from gridfs import GridFS
 import numpy as np
 from sklearn.linear_model import LogisticRegression, LinearRegression
 
@@ -10,6 +11,7 @@ class TestJob(object):
     def setup_class(self):
         conn = pymongo.MongoClient('localhost')
         self.db = conn.joblog_test
+        self.fs = GridFS(self.db)
 
     def setup_method(self, method):
         self.clf = LogisticRegression
@@ -103,7 +105,11 @@ class TestJob(object):
         clf1 = j.run(store='score')
         assert j.result == clf1.score(self.x, self.y)
 
+    def test_save_predict(self):
 
+        j = Job(self.clf, self.x, self.y, self.params, self.collection)
+        clf1 = j.run(store='prediction')
+        np.testing.assert_array_equal(j.result, clf1.predict(self.x))
 
     def test_duplicate(self):
         j = Job(self.clf, self.x, self.y, self.params, self.collection)
@@ -113,12 +119,31 @@ class TestJob(object):
         assert not j.duplicate
         assert j2.duplicate
 
+    def test_label(self):
+        j = Job(self.clf, self.x, self.y, self.params, self.collection,
+                label='test_label')
+        e = self.collection.find_one({'label':'test_label'})
+        assert e['params'] == self.params
+
+    def test_file_cleanup(self):
+        #should delete old files if changing result
+        j = Job(self.clf, self.x, self.y, self.params, self.collection,
+                label='test_label')
+        clf = j.run()
+
+        e = self.collection.find_one({'label': 'test_label'})
+        fid = e['result']
+
+        j.result = 5
+        assert not self.fs.exists(fid)
+
 
 class TestJobFactory(object):
     def setup_method(self, method):
         conn = pymongo.MongoClient('localhost')
         db = conn.joblog_test
         db.drop_collection('test')
+        self.db = db
 
     def make_factory(self):
         return JobFactory('localhost', 'joblog_test', 'test')
@@ -130,16 +155,28 @@ class TestJobFactory(object):
         j = jf.job(LogisticRegression, X, Y, {})
         assert isinstance(j, Job)
 
-    def test_iter_jobs(self):
+    def test_job_grid(self):
         jf = self.make_factory()
         X, Y = np.random.normal(0, 1, (10, 3)), np.random.randint(0, 2, (10))
 
         pg = dict(loss=['l1', 'l2'], C=[.01, .1, 1])
-        assert len(list(jf.iter_jobs(LogisticRegression, X, Y, pg))) == 6
+        assert len(list(jf.job_grid(LogisticRegression, X, Y, pg))) == 6
 
         #filters duplicates
-        assert len(list(jf.iter_jobs(LogisticRegression, X, Y, pg))) == 0
+        assert len(list(jf.job_grid(LogisticRegression, X, Y, pg))) == 0
 
         #turn off filtering
-        assert len(list(jf.iter_jobs(LogisticRegression,
+        assert len(list(jf.job_grid(LogisticRegression,
                                      X, Y, pg, False))) == 6
+
+    def test_clear_jobs(self):
+        jf = self.make_factory()
+
+        X, Y = np.random.normal(0, 1, (10, 3)), np.random.randint(0, 2, (10))
+
+        j = jf.job(LogisticRegression, X, Y, {})
+        j2 = jf.job(LogisticRegression, X+1, Y, {})
+
+        assert list(self.db.test.find()) != []
+        jf.clear_jobs()
+        assert list(self.db.test.find()) == []
