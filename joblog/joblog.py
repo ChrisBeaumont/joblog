@@ -204,3 +204,15 @@ class Job(object):
         """
         self.result = None
         return self.run()
+
+    def __getitem__(self, key):
+        entry = self.collection.find_one(self._entry)
+        try:
+            return entry[key]
+        except KeyError:
+            raise KeyError("No attribute %s associated with this job" % key)
+
+    def __setitem__(self, key, value):
+        self.collection.update(self._entry,
+                               {"$set" : {key: value}},
+                               upsert=True)

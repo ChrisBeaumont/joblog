@@ -2,6 +2,7 @@ import pymongo
 from gridfs import GridFS
 import numpy as np
 from sklearn.linear_model import LogisticRegression, LinearRegression
+import pytest
 
 from . import Job, JobFactory
 
@@ -136,6 +137,23 @@ class TestJob(object):
 
         j.result = 5
         assert not self.fs.exists(fid)
+
+    def test_get_set(self):
+        j = Job(self.clf, self.x, self.y, self.params, self.collection)
+        j2 = Job(self.clf, self.x, self.y, self.params, self.collection)
+
+        j['test_extra'] = 123
+        assert j['test_extra'] == 123
+
+        #confirm it's actually in the database
+        assert j2['test_extra'] == 123
+
+    def test_invalid_get(self):
+        j = Job(self.clf, self.x, self.y, self.params, self.collection)
+
+        with pytest.raises(KeyError) as e:
+            j['test']
+        assert e.value[0] == 'No attribute test associated with this job'
 
 
 class TestJobFactory(object):

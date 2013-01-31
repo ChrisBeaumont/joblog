@@ -106,6 +106,16 @@ Deleting Jobs
 -------------
 You can delete all jobs in a collection via `JobFactory.clear_jobs()`
 
+Storing Other Information
+-------------------------
+Extra attributes can be associated with each job using key/value syntax.
+These values are stored in the database
+
+```
+job['recall'] = 0.95
+assert job['recall'] == 0.95
+```
+
 Parameter Search
 -------
 The `job_grid` method creates and returns a grid of jobs
